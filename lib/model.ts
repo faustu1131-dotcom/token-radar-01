@@ -368,10 +368,342 @@ function weeklyActionFor(p: SnapshotProtocol): string {
 }
 
 /**
+ * Hand-written farm plans for the board's top 10, keyed by slug. The template in
+ * farmSteps still generates every other row; these ten replace it. Every figure comes
+ * from the protocol's own snapshot record (chains, TVL, listing date, 7-day change);
+ * gas figures are labeled estimates. The dashboard carries the same map, so the page
+ * shows exactly what board.json holds.
+ */
+const FARM_PLAN_OVERRIDES: Record<string, FarmStep[]> = {
+  "steakhouse-financial": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $150 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$150 of capital and about $1 of gas (estimate)",
+        "text": "Deposit $150 into a Steakhouse Financial vault on Base, the first of its 11 chains, and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $1 of gas a week (estimate)",
+        "text": "Each week, compound the position by adding $25 or rebalancing between the Base vault and a second Steakhouse vault on Arbitrum, so the wallet shows repeated use on two chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $150 stays in the position",
+        "text": "Hold the position for at least 30 days. Steakhouse has run 543 days with no token and holds $2.75B of TVL, so a single month of steady activity is the minimum that reads as a real user.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the curator's strategy can lose value. Mitigation: keep the position fixed at $150 and do not top it up beyond the weekly $25. Before you withdraw, open Steakhouse Financial's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the vault's TVL falls sharply: withdraw the shares on Base, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $1 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "sentora-curator": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $150 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$150 of capital and about $8 of gas (estimate)",
+        "text": "Deposit $150 into a Sentora Curator vault on Ethereum, its largest chain, and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $8 of gas a week on Ethereum (estimate)",
+        "text": "Each week, compound the position with one more deposit or rebalance on Ethereum, and once a month repeat the action on Ink, so the wallet is active on two of Sentora's four chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $150 stays in the position",
+        "text": "Hold for at least 30 days. Sentora listed in October 2025 and already holds $2.76B, up 2.4% in the last week, so early steady activity is what a launch would most likely reward.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the curator's strategy can lose value. Mitigation: keep the position at $150 and exit if the vault's TVL falls sharply. Before you withdraw, open Sentora Curator's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the vault's TVL falls sharply: withdraw the shares on Ethereum, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $8 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "gauntlet": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $150 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$150 of capital and about $1 of gas (estimate)",
+        "text": "Deposit $150 into a Gauntlet vault on Base, the first of its 14 chains, and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $1 of gas a week (estimate)",
+        "text": "Each week, compound the position by rebalancing or adding $25, alternating between Base and Arbitrum, so the wallet shows use on two of Gauntlet's 14 chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $150 stays in the position",
+        "text": "Hold for at least 30 days. Gauntlet's TVL rose 5.6% in the last week to $1.58B across 14 chains, so a month of repeated activity on two chains is the position to hold.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the curator's strategy can lose value. Mitigation: keep the position fixed at $150 and exit if the vault's TVL falls sharply. Before you withdraw, open Gauntlet's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the vault's TVL falls sharply: withdraw the shares on Base, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $1 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "veda": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $150 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$150 of capital and about $1 of gas (estimate)",
+        "text": "Deposit $150 into a Veda vault on Ink, the first of its 13 chains, and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $1 of gas a week on Ink, about $8 for the Ethereum step (estimates)",
+        "text": "Each week, compound the position by rebalancing or adding $25 on Ink, and once during the hold repeat the deposit on Ethereum, so the wallet is active on two chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $150 stays in the position",
+        "text": "Hold for at least 30 days. Veda's TVL fell 8.3% in the last week to $1.56B, so keep the position modest and do not add capital to chase the dip.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the allocator's strategy can lose value. Mitigation: keep the position at $150 and exit if the TVL fall steepens. Before you withdraw, open Veda's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the TVL fall steepens: withdraw the shares on Ink, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $1 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "usdd": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $150 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$150 of collateral and about $2 of gas (estimate)",
+        "text": "Open a collateralized position and mint $150 of USDD on Tron, its first chain, and keep the position open.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $2 of gas a week (estimate)",
+        "text": "Each week, compound the position by adding collateral, repaying a little, or supplying the minted USDD to a pool on Tron, so the wallet shows repeated CDP use.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $150 stays locked as collateral",
+        "text": "Hold for at least 30 days. USDD has run 611 days with no token and holds $1.06B, so a month of maintained collateral is the minimum that reads as a real user.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: a CDP can be liquidated if the collateral falls, and USDD can lose its peg. Mitigation: keep the position at $150 and unwind if the peg slips. Before you unwind, open USDD's own mint and redemption page and check the position only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or USDD loses its peg: repay and close the position on Tron, then write the wallet, the position, the dates and every transaction in a farm log.",
+        "cost": "about $2 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "upshift": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $100 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$100 of capital and about $8 of gas (estimate)",
+        "text": "Deposit $100 into an Upshift vault on Ethereum and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $8 of gas a week on Ethereum (estimate)",
+        "text": "Each week, compound the position by adding $25 or rebalancing on Ethereum, and once during the hold repeat the action on Base, so the wallet is active on two of Upshift's 15 chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $100 stays in the position",
+        "text": "Hold for at least 30 days. Upshift's TVL rose 8.3% in the last week to $499M, so steady activity during a growth week is the position to hold.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the allocator's strategy can lose value. Mitigation: keep the position at $100 and exit if the vault's TVL falls sharply. Before you withdraw, open Upshift's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the vault's TVL falls sharply: withdraw the shares on Ethereum, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $8 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "cian-yield-layer": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $100 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$100 of capital and about $8 of gas (estimate)",
+        "text": "Provide $100 of liquidity to CIAN Yield Layer's main pool on Ethereum and keep the position open.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $8 of gas a week on Ethereum (estimate)",
+        "text": "Each week, compound the position by adjusting it once, a swap or a liquidity change on Ethereum, and once on Arbitrum, so the wallet shows use on two of its seven chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $100 stays in the position",
+        "text": "Hold for at least 30 days. CIAN has run 726 days with no token and holds $280M of TVL, up 4.7% in the last week, so a month of repeated yield activity is the minimum that reads as a real user.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: providing liquidity carries impermanent loss if the pool's assets diverge, plus smart-contract risk. Mitigation: keep the position at $100 and exit if the pool drifts far from entry. Before you withdraw, open CIAN Yield Layer's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or the pool drifts far from entry: remove the liquidity on Ethereum, then write the wallet, the pool, the dates and every transaction in a farm log.",
+        "cost": "about $8 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "nonce-capital": [
+      {
+        "cost": "under $3 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $100 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$100 of capital and about $8 of gas (estimate)",
+        "text": "Deposit $100 into a Nonce Capital vault on Ethereum and keep the shares for the full hold.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "about $8 of gas a week on Ethereum (estimate)",
+        "text": "Each week, compound the position by adding $25 or rebalancing on Ethereum, and once during the hold repeat the action on Optimism, so the wallet is active on both of Nonce's two chains.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $100 stays in the position",
+        "text": "Hold for at least 60 days. Nonce listed only 45 days ago and its TVL fell 9.7% in the last week to $514M, so a longer hold and a modest position matter more than size here.",
+        "time": "60 days"
+      },
+      {
+        "text": "Risk: the vault is a smart contract and the curator's strategy can lose value. Mitigation: keep the position at $100 and exit if the TVL fall steepens. Before you withdraw, open Nonce Capital's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 60 days are up or the TVL fall steepens: withdraw the shares on Ethereum, then write the wallet, the vault, the dates and every transaction in a farm log.",
+        "cost": "about $8 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "polymarket-international": [
+      {
+        "cost": "under $1 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet funded with $100 of USDC on Polygon, Polymarket International's only chain, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$100 of capital and under $1 of gas (estimate)",
+        "text": "Fund the account with $100 and place one market position on Polymarket International, keeping most of the balance for later markets.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "under $1 of gas a week (estimate)",
+        "text": "Each week, place one more position in a different market, so the wallet shows repeated trading rather than a single bet.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $100 stays in the account",
+        "text": "Hold the activity for at least 30 days. Polymarket International has run 1,845 days with no token and $320M of TVL, so a month of steady positions across several markets is the minimum that reads as a real user.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: a market position can go to zero. Mitigation: never stake the full $100 on one market; spread it across several and cap each position. Before you withdraw, open Polymarket International's own rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up or a market resolves: withdraw the balance on Polygon, then write the wallet, the markets, the dates and every transaction in a farm log.",
+        "cost": "under $1 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+  "onre": [
+      {
+        "cost": "under $1 of gas for the first transaction (estimate)",
+        "text": "Set up a fresh wallet that holds only the $100 you plan to farm, and keep its seed phrase offline.",
+        "time": "5 minutes"
+      },
+      {
+        "cost": "$100 of capital and under $1 of gas (estimate)",
+        "text": "Mint $100 of OnRe's yield asset on Solana and hold it.",
+        "time": "15 minutes to set up"
+      },
+      {
+        "cost": "under $1 of gas a week (estimate)",
+        "text": "Each week, mint $25 more or redeem and re-mint a small amount, so the wallet shows repeated use of the RWA asset.",
+        "time": "10 minutes a week"
+      },
+      {
+        "cost": "the $100 stays in the position",
+        "text": "Hold for at least 30 days. OnRe has run 488 days with no token and $309M of TVL on Solana alone, so a month of steady holding is the minimum that reads as a real user.",
+        "time": "30 days"
+      },
+      {
+        "text": "Risk: the yield asset is a smart contract and redemptions can be slow or limited. Mitigation: keep the position at $100 and test a small redemption before unwinding the full amount. Before you withdraw, open OnRe's own points or rewards page and claim only from the link it publishes.",
+        "cost": "no fee to check, and never pay to claim",
+        "time": "10 minutes"
+      },
+      {
+        "text": "Exit when the 30 days are up: redeem the yield asset on Solana, testing a small redemption first, then write the wallet, the asset, the dates and every transaction in a farm log.",
+        "cost": "under $1 of gas to unwind (estimate)",
+        "time": "15 minutes to unwind"
+      }
+    ],
+};
+
+/**
  * A protocol's farm plan: six steps, each an action with a cost and a time. The plan is derived from
  * the protocol's own record (category, chains, TVL, age), never from a hand-written list of names.
  */
 export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
+  const override = FARM_PLAN_OVERRIDES[p.slug];
+  if (override !== undefined) return override;
   const chain = chainOf(p);
   const capital = capitalFor(p);
   const hold = holdDaysFor(age);
