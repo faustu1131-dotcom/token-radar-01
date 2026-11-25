@@ -62,7 +62,10 @@ check('all 40 top-40 plan first-steps in dossier text', plansFound === 40, `${pl
 // mechanism table + coverage panel in the dossier text
 check('MECH table in dossier text', dossier.text.includes('MECH_T'));
 check('mechanism coverage panel in dossier text', dossier.text.includes('Mechanism coverage'));
-check('FARM sentence (R2 reason) in dossier text', dossier.text.includes('all carry R2 risk'));
+check('FARM gates text in dossier text', dossier.text.includes('FARM gates (all must pass; unknown inputs never pass)') && dossier.text.includes('No row currently passes every FARM gate'));
+check('BLOCKED fallback in dossier text', dossier.text.includes('BLOCKED: verified execution route unavailable. Do not deposit.'));
+check('lede copy in dossier text', dossier.text.includes('Neither ranking predicts launch probability'));
+check('token labels in dossier text', dossier.text.includes("'Live token'") && dossier.text.includes("'No token recorded'") && dossier.text.includes("'Unknown'"));
 // --- fact counts: computed from the fact files (never hardcoded, so they cannot go stale) ---
 const factsTop = JSON.parse(readFileSync(join(here, '..', 'token-radar-01', 'protocol-facts.json'), 'utf8'));
 const factsRest = JSON.parse(readFileSync(join(here, '..', 'token-radar-01', 'protocol-facts-41-198.json'), 'utf8'));
@@ -91,7 +94,8 @@ check('ranks 1..198', rows.every((r, i) => r.rank === i + 1));
 check('implied values non-increasing', rows.every((r, i) => i === 0 || r.implied_value_usd <= rows[i - 1].implied_value_usd));
 const verdicts = {};
 for (const r of rows) verdicts[r.verdict] = (verdicts[r.verdict] || 0) + 1;
-check('no FARM verdicts (honest)', (verdicts.FARM || 0) === 0, JSON.stringify(verdicts));
+const farmSlugs = rows.filter((r) => r.verdict === 'FARM').map((r) => r.slug);
+check('FARM verdicts == none (no row passes every gate)', farmSlugs.length === 0, JSON.stringify(verdicts));
 check('farm_steps 3-12, 20-600 chars each', rows.every((r) => r.farm_steps.length >= 3 && r.farm_steps.length <= 12 && r.farm_steps.every((s) => s.length >= 20 && s.length <= 600)));
 // watchlist coverage: read the snapshot watchlist
 const snap = JSON.parse(readFileSync(input.endsWith('.json') ? input : join(input, 'snapshot.json'), 'utf8'));
