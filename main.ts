@@ -1,16 +1,19 @@
-// Token Radar (radar-2): a token-radar-01 entry (Node 22, standard library only).
+// Token Radar (model b0): a token-radar-01 entry (Node 22, standard library only).
 //
 // The program reads the sealed snapshot from /input/snapshot.json (or --input <file|dir>), scores every
-// pre-token protocol with the radar-2 model in lib/model.ts (TVL x 0.25, adjusted by seven-day growth,
-// age with no token and chain breadth; no protocol is ever special-cased), writes the ranked board to
-// /output/board.json (198 rows: the whole 40-protocol watchlist plus 158 early finds below the floor),
-// and copies this repository's dashboard/ and screenshots/ to /output. Last, it writes
-// /output/dossier.json, the summary the judge reads, with the vendored make.fun library.
+// pre-token protocol with the validated B0 baseline in lib/model.ts (implied value = TVL x the median
+// market-cap/TVL multiple 0.21380325885644053, fitted on 128 traded-token protocols in 128 distinct
+// token families; a robust log regression was tested by grouped 5-fold token-family validation and NOT
+// promoted), writes the ranked board to /output/board.json (198 rows: the whole 40-protocol watchlist
+// plus 158 early finds below the floor), and copies this repository's dashboard/ and screenshots/ to
+// /output. Last, it writes /output/dossier.json, the summary the judge reads, with the vendored make.fun
+// library.
 //
 // The dashboard is a static page, no framework and no network: dashboard/index.html, dashboard/app.css
 // and dashboard/app.js read /output/data.js, which this program writes from the same board. It shows the
-// board ranked by implied value, a detail view with the model's multiplier breakdown and a farm plan for
-// every protocol, and a live-token view set aside from the ranking.
+// board ranked by implied value, a detail view with the valuation range, economic verdict and a farm plan
+// for every protocol, a validation panel, an integrity panel, and a live-token view set aside from the
+// ranking.
 //
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input ../input/snapshot.json
